@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VaultUSD</title>
+  <style>
+    :root { --primary: #00d4ff; --bg: #0b0f19; --card: #151a28; --text: #e0e6ed; --accent: #00ff88; --danger: #ff4444; }
+    body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+    .container { max-width: 1000px; margin: auto; }
+    .auth-box, .dashboard { background: var(--card); padding: 25px; border-radius: 12px; margin-top: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+    input, button, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #333; background: #1a2030; color: white; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+    button { background: var(--primary); color: #000; font-weight: bold; cursor: pointer; border: none; transition: 0.2s; }
+    button:hover { opacity: 0.85; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .hidden { display: none !important; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 15px; margin: 15px 0; }
+    .card { background: #1a2030; padding: 15px; border-radius: 8px; border: 1px solid #333; }
+    .card h3 { color: var(--primary); margin: 0 0 8px; }
+    .copy-btn { background: #333; color: white; padding: 6px 12px; font-size: 13px; width: auto; display: inline-block; margin-top: 8px; }
+    .notice { background: #2a1515; border: 1px solid #ff4444; padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: center; font-weight: bold; font-size: 13px; }
+    .balance-box { background: #0f1520; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-size: 1.3em; border: 1px solid var(--primary); }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; margin-bottom: 5px; color: #aaa; font-size: 13px; }
+    .req { color: var(--danger); }
+    .timers { display: flex; gap: 12px; margin-bottom: 15px; flex-wrap: wrap; }
+    .timer-box { flex: 1; background: #111827; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #333; min-width: 130px; }
+    .timer-box span { display: block; font-size: 12px; color: #888; margin-bottom: 4px; }
+    .timer-box b { color: var(--accent); font-size: 15px; }
+    .lang-bar { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; }
+    .lang-btn { padding: 6px 12px; background: #1a2030; color: #aaa; border: 1px solid #333; border-radius: 6px; cursor: pointer; }
+    .lang-btn.active { background: var(--primary); color: #000; border-color: var(--primary); }
+    a { color: var(--primary); cursor: pointer; text-decoration: none; }
+    h2 { margin-top: 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="lang-bar">
+      <button class="lang-btn active" onclick="setLang('ar')">🇸🇦 عربي</button>
+      <button class="lang-btn" onclick="setLang('en')">🇬🇧 EN</button>
+      <button class="lang-btn" onclick="setLang('fr')">🇫🇷 FR</button>
+    </div>
+    <h1 style="text-align:center; color:var(--primary); letter-spacing:2px;" data-i18n="siteTitle">VaultUSD</h1>
+
+    <div id="loginSection" class="auth-box">
+      <h2 data-i18n="login">تسجيل الدخول</h2>
+      <input type="text" id="username" data-i18n-placeholder="usernamePH" placeholder="اسم المستخدم (إنجليزي، بدون مسافات)">
+      <input type="password" id="password" data-i18n-placeholder="passwordPH" placeholder="كلمة المرور (6 أحرف على الأقل)">
+      <button id="loginBtn" data-i18n="loginBtn">دخول</button>
+      <p style="text-align:center; margin-top:10px;"><span data-i18n="noAccount">ليس لديك حساب؟</span> <a id="toReg" data-i18n="registerLink">سجل الآن</a></p>
+    </div>
+
+    <div id="registerSection" class="auth-box hidden">
+      <h2 data-i18n="register">إنشاء حساب جديد</h2>
+      <input type="text" id="regUser" data-i18n-placeholder="usernamePH" placeholder="اسم المستخدم (إنجليزي، بدون مسافات)">
+      <input type="password" id="regPass" data-i18n-placeholder="passwordPH" placeholder="كلمة المرور (6 أحرف على الأقل)">
+      <button id="regBtn" data-i18n="regBtn">تسجيل</button>
+      <p style="text-align:center; margin-top:10px;"><a id="toLogin" data-i18n="backToLogin">العودة لتسجيل الدخول</a></p>
+    </div>
+
+    <div id="dashboardSection" class="dashboard hidden">
+      <div class="notice" data-i18n="notice">⚠️ احفظ بيانات الدخول. لا يوجد استعادة للحسابات المفقودة.</div>
+      <div class="balance-box"><span data-i18n="balanceLabel">الرصيد الحالي</span>: <span id="balanceDisplay">$0.00</span></div>
+      <div class="timers hidden" id="timersContainer">
+        <div class="timer-box"><span data-i18n="profitTimer">الوقت للربح التالي</span><b id="profitCountdown">--:--:--</b></div>
+        <div class="timer-box"><span data-i18n="expiryTimer">انتهاء الباقة</span><b id="expiryCountdown">--</b></div>
+      </div>
+      <h3 data-i18n="packages">📦 الباقات الاستثمارية</h3>
+      <div class="grid" id="packagesGrid"></div>
+      <h3 data-i18n="networks">💳 عناوين الإيداع الرسمية</h3>
+      <div class="grid" id="networksGrid"></div>
+      <h3 data-i18n="depositReq">📥 طلب إيداع</h3>
+      <div class="form-group"><label data-i18n="networkLabel">الشبكة</label><select id="depNetwork"><option value="TRC20">TRC20</option><option value="ERC20">ERC20</option><option value="BEP20">BEP20</option><option value="Polygon">Polygon</option><option value="Solana">Solana</option></select></div>
+      <div class="form-group"><label data-i18n="amountLabel">المبلغ ($)</label><input type="number" id="depAmt" data-i18n-placeholder="amountPH" placeholder="مثال: 100"></div>
+      <div class="form-group"><label data-i18n="txidLabel">رقم التحويل / TXID <span class="req" data-i18n="required">(إجباري)</span></label><input type="text" id="depTxId" data-i18n-placeholder="txidPH" placeholder="مثال: 0x123...abc"></div>
+      <button id="submitDepositBtn" data-i18n="submitDeposit">إرسال طلب الإيداع</button>
+      <h3 data-i18n="withdraw">💸 طلب سحب</h3>
+      <select id="withdrawNetwork"><option value="TRC20">TRC20</option><option value="ERC20">ERC20</option><option value="BEP20">BEP20</option><option value="Polygon">Polygon</option><option value="Solana">Solana</option></select>
+      <input type="number" id="withdrawAmt" data-i18n-placeholder="withdrawAmtPH" placeholder="المبلغ (الحد الأدنى 50$)">
+      <input type="text" id="withdrawAddr" data-i18n-placeholder="walletPH" placeholder="عنوان محفظتك">
+      <button id="withdrawBtn" data-i18n="submitWithdraw">إرسال طلب السحب</button>
+      <button id="logoutBtn" style="background:var(--danger); margin-top:10px;" data-i18n="logout">تسجيل خروج</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, addDoc, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+    const firebaseConfig = { apiKey: "AIzaSyBEPY92lQXZHchrmPbmeNRjFG3FtkiN3a0", authDomain: "vaultusd-c1998.firebaseapp.com", projectId: "vaultusd-c1998", storageBucket: "vaultusd-c1998.firebasestorage.app", messagingSenderId: "627849430299", appId: "1:627849430299:web:d5680cc24a21861f367fbe" };
+    let auth, db;
+    try { const app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app); } catch(e) { alert("❌ خطأ في تهيئة Firebase"); }
+
+    const networks = [{net:'TRC20',addr:'TAZVA4hwWfyPgd9yeSUr6Mh2PKk1iXP9uh'},{net:'ERC20',addr:'0x94027279299531c2e7a772bc99bc8e3e9e5e206a'},{net:'BEP20',addr:'0xc4e5bcd8cf4646fc72976ac78a371619b3ab6176'},{net:'Polygon',addr:'0xaf603b8efdb4747445972cc7fa5ec0d457f95051'},{net:'Solana',addr:'9Kfr9FhMbURTKisfxQ2gHJXvWXfCyFvFpWCeV6EFKgXL'}];
+    const packages = [{id:'vip1',name:'VIP1',price:10,profit:'15-20%'},{id:'vip2',name:'VIP2',price:30,profit:'15-25%'},{id:'vip3',name:'VIP3',price:100,profit:'15-25%'},{id:'vip4',name:'VIP4',price:250,profit:'15-25%'},{id:'vip5',name:'VIP5',price:500,profit:'20-25%'},{id:'vip6',name:'VIP6',price:1000,profit:'20-30%'}];
+    const dailyProfits = { vip1: 1.5, vip2: 6, vip3: 20, vip4: 50, vip5: 112.5, vip6: 250 };
+
+    const $ = id => document.getElementById(id);
+    const toggle = v => { $('loginSection').classList.toggle('hidden', v!=='login'); $('registerSection').classList.toggle('hidden', v!=='register'); $('dashboardSection').classList.toggle('hidden', v!=='dashboard'); };
+    const toEmail = u => `${u.toLowerCase().replace(/\s/g, '')}@vaultusd.com`;
+
+    const i18n = {
+      ar: { siteTitle:"VaultUSD", login:"تسجيل الدخول", usernamePH:"اسم المستخدم (إنجليزي، بدون مسافات)", passwordPH:"كلمة المرور (6 أحرف على الأقل)", loginBtn:"دخول", noAccount:"ليس لديك حساب؟", registerLink:"سجل الآن", register:"إنشاء حساب جديد", regBtn:"تسجيل", backToLogin:"العودة لتسجيل الدخول", notice:"⚠️ احفظ بيانات الدخول. لا يوجد استعادة للحسابات المفقودة.", balanceLabel:"الرصيد الحالي", profitTimer:"الوقت للربح التالي", expiryTimer:"انتهاء الباقة", packages:"📦 الباقات الاستثمارية", networks:"💳 عناوين الإيداع الرسمية", depositReq:"📥 طلب إيداع", networkLabel:"الشبكة", amountLabel:"المبلغ ($)", amountPH:"مثال: 100", txidLabel:"رقم التحويل / TXID", required:"(إجباري)", txidPH:"مثال: 0x123...abc", submitDeposit:"إرسال طلب الإيداع", withdraw:"💸 طلب سحب", withdrawAmtPH:"المبلغ (الحد الأدنى 50$)", walletPH:"عنوان محفظتك", submitWithdraw:"إرسال طلب السحب", logout:"تسجيل خروج", copy:"نسخ", insufficient:"⚠️ رصيدك غير كافٍ. المطلوب: $", available:" | المتاح: $", activate:"تفعيل", checking:"جاري...", activated:"✅ تم التفعيل", deducted:"وخصم $", success:"✅ تم إنشاء الحساب", exists:"اسم المستخدم مستخدم مسبقاً", wrong:"❌ اسم المستخدم أو كلمة المرور خاطئة", depositSent:"✅ تم استلام طلب الإيداع", withdrawSent:"✅ تم استلام طلب السحب", fillAll:"أدخل البيانات كاملة", englishOnly:"اسم المستخدم إنجليزي بدون مسافات", minPass:"كلمة المرور 6 أحرف على الأقل", validAmt:"أدخل مبلغ صحيح", txidReq:"رقم التحويل إجباري", min50:"الحد الأدنى 50$", enterWallet:"أدخل عنوان المحفظة", loginFirst:"سجل الدخول أولاً" },
+      en: { siteTitle:"VaultUSD", login:"Login", usernamePH:"Username (English, no spaces)", passwordPH:"Password (min 6 chars)", loginBtn:"Login", noAccount:"No account?", registerLink:"Register now", register:"Create Account", regBtn:"Register", backToLogin:"Back to Login", notice:"⚠️ Save credentials. No recovery.", balanceLabel:"Current Balance", profitTimer:"Time to next profit", expiryTimer:"Package expiry", packages:"📦 Investment Packages", networks:"💳 Official Deposit Addresses", depositReq:"📥 Deposit Request", networkLabel:"Network", amountLabel:"Amount ($)", amountPH:"e.g. 100", txidLabel:"TXID", required:"(Required)", txidPH:"e.g. 0x123...abc", submitDeposit:"Submit Deposit", withdraw:"💸 Withdraw", withdrawAmtPH:"Amount (min $50)", walletPH:"Wallet address", submitWithdraw:"Submit Withdrawal", logout:"Logout", copy:"Copy", insufficient:"⚠️ Insufficient balance. Required: $", available:" | Available: $", activate:"Activate", checking:"Checking...", activated:"✅ Activated", deducted:"Deducted $", success:"✅ Account created", exists:"Username already taken", wrong:"❌ Invalid username or password", depositSent:"✅ Deposit request sent", withdrawSent:"✅ Withdrawal request sent", fillAll:"Fill all fields", englishOnly:"Username must be English without spaces", minPass:"Password min 6 chars", validAmt:"Enter valid amount", txidReq:"TXID required", min50:"Minimum $50", enterWallet:"Enter wallet address", loginFirst:"Login first" },
+      fr: { siteTitle:"VaultUSD", login:"Connexion", usernamePH:"Nom (Anglais, sans espaces)", passwordPH:"Mot de passe (min 6)", loginBtn:"Se connecter", noAccount:"Pas de compte ?", registerLink:"S'inscrire", register:"Créer un compte", regBtn:"S'inscrire", backToLogin:"Retour", notice:"⚠️ Sauvegardez vos identifiants.", balanceLabel:"Solde actuel", profitTimer:"Prochain profit", expiryTimer:"Expiration forfait", packages:"📦 Forfaits", networks:"💳 Adresses de dépôt", depositReq:"📥 Demande de dépôt", networkLabel:"Réseau", amountLabel:"Montant ($)", amountPH:"ex: 100", txidLabel:"TXID", required:"(Obligatoire)", txidPH:"ex: 0x123...abc", submitDeposit:"Envoyer dépôt", withdraw:"💸 Retrait", withdrawAmtPH:"Montant (min 50$)", walletPH:"Adresse portefeuille", submitWithdraw:"Envoyer retrait", logout:"Déconnexion", copy:"Copier", insufficient:"⚠️ Solde insuffisant. Requis: $", available:" | Disponible: $", activate:"Activer", checking:"Vérification...", activated:"✅ Activé", deducted:"Déduit $", success:"✅ Compte créé", exists:"Nom déjà utilisé", wrong:"❌ Identifiants invalides", depositSent:"✅ Demande envoyée", withdrawSent:"✅ Demande envoyée", fillAll:"Remplissez tout", englishOnly:"Nom en anglais sans espaces", minPass:"Mot de passe min 6", validAmt:"Montant invalide", txidReq:"TXID requis", min50:"Minimum 50$", enterWallet:"Entrez l'adresse", loginFirst:"Connectez-vous" }
+    };
+    window.setLang = lang => {
+      localStorage.setItem('lang', lang);
+      document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.includes(lang.toUpperCase() || (lang==='ar'?'عربي':''))));
+      document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = i18n[lang][el.dataset.i18n] || el.textContent);
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => el.placeholder = i18n[lang][el.dataset.i18nPlaceholder] || el.placeholder);
+      document.documentElement.lang = lang; document.documentElement.dir = lang==='ar'?'rtl':'ltr';
+      renderStatic();
+    };
+    let currentLang = localStorage.getItem('lang') || 'ar';
+    setLang(currentLang);
+
+    const renderStatic = () => {
+      const t = i18n[currentLang];
+      $('packagesGrid').innerHTML = packages.map(p => `<div class="card"><h3>${p.name}</h3><p>السعر: <b>$${p.price}</b></p><p>الربح اليومي: <b>${p.profit}</b></p><button class="pkg-btn" data-id="${p.id}" data-price="${p.price}">${t.activate}</button></div>`).join('');
+      $('networksGrid').innerHTML = networks.map(n => `<div class="card"><h3>${n.net}</h3><p style="word-break:break-all;font-size:13px;margin:5px 0">${n.addr}</p><button class="copy-btn" data-addr="${n.addr}">${t.copy}</button></div>`).join('');
+      document.querySelectorAll('.pkg-btn').forEach(btn => btn.addEventListener('click', () => activatePackage(btn.dataset.id, parseFloat(btn.dataset.price))));
+      document.querySelectorAll('.copy-btn').forEach(btn => btn.addEventListener('click', () => navigator.clipboard.writeText(btn.dataset.addr).then(()=>alert('✅'))));
+    };
+
+    const checkAndAddDailyProfit = async (uid, data) => {
+      if (!data.activePackage) return false;
+      const last = data.lastProfitAdded || 0;
+      if (Date.now() - last >= 86400000) {
+        const p = dailyProfits[data.activePackage] || 0;
+        if (p > 0) { await setDoc(doc(db,'users',uid), { balance: increment(p), lastProfitAdded: Date.now() }, {merge:true}); return true; }
+      }
+      return false;
+    };
+
+    let timerInt;
+    const updateTimers = d => {
+      if(!d?.activePackage) { $('timersContainer').classList.add('hidden'); clearInterval(timerInt); return; }
+      $('timersContainer').classList.remove('hidden');
+      const now = Date.now();
+      const pL = Math.max(0, 86400000 - (now - (d.lastProfitAdded || d.packageActivatedAt || 0)));
+      const eL = Math.max(0, 2592000000 - (now - (d.packageActivatedAt || 0)));
+      $('profitCountdown').textContent = `${String(Math.floor(pL/36e5)).padStart(2,'0')}:${String(Math.floor((pL%36e5)/6e4)).padStart(2,'0')}:${String(Math.floor((pL%6e4)/1e3)).padStart(2,'0')}`;
+      $('expiryCountdown').textContent = `${Math.ceil(eL/864e5)} ${currentLang==='ar'?'يوم':currentLang==='fr'?'jours':'days'}`;
+    };
+
+    const activatePackage = async (id, price) => {
+      const u = auth?.currentUser; if(!u) return alert(i18n[currentLang].loginFirst);
+      const btn = document.querySelector(`.pkg-btn[data-id="${id}"]`); if(btn) { btn.disabled=true; btn.textContent=i18n[currentLang].checking; }
+      try {
+        const snap = await getDoc(doc(db,'users',u.uid));
+        if(!snap.exists()) return alert('خطأ في البيانات');
+        const bal = snap.data().balance || 0;
+        if(bal < price) return alert(`${i18n[currentLang].insufficient}$${price}${i18n[currentLang].available}$${bal}`);
+        await setDoc(doc(db,'users',u.uid), { activePackage:id, balance:increment(-price), lastProfitAdded:Date.now(), packageActivatedAt:Date.now() }, {merge:true});
+        alert(`${i18n[currentLang].activated} ${id} ${i18n[currentLang].deducted}$${price}`);
+        loadUserData(u.uid);
+      } catch(e) { alert('❌ '+e.message); }
+      finally { if(btn) { btn.disabled=false; btn.textContent=i18n[currentLang].activate; } }
+    };
+
+    const loadUserData = async uid => {
+      const snap = await getDoc(doc(db,'users',uid));
+      if(snap.exists()) {
+        const d = snap.data();
+        $('balanceDisplay').textContent = `$${d.balance||0}`;
+        if(await checkAndAddDailyProfit(uid, d)) {
+          const up = await getDoc(doc(db,'users',uid));
+          $('balanceDisplay').textContent = `$${up.data().balance||0}`;
+        }
+        clearInterval(timerInt);
+        timerInt = setInterval(()=>updateTimers(d), 1000);
+        updateTimers(d);
+      }
+    };
+
+    $('submitDepositBtn').addEventListener('click', async () => {
+      const amt = parseFloat($('depAmt').value); const txId = $('depTxId').value.trim();
+      if(!amt || amt<=0) return alert(i18n[currentLang].validAmt);
+      if(!txId) return alert(i18n[currentLang].txidReq);
+      $('submitDepositBtn').disabled=true; $('submitDepositBtn').textContent='...';
+      try {
+        const u = auth.currentUser; const uSnap = await getDoc(doc(db,'users',u.uid));
+        await addDoc(collection(db,'deposits'), { uid:u.uid, username:uSnap.exists()?uSnap.data().username:'?', amount:amt, network:$('depNetwork').value, txId, status:'pending', requestedAt:serverTimestamp() });
+        alert(i18n[currentLang].depositSent); $('depAmt').value=''; $('depTxId').value='';
+      } catch(e) { alert('❌ '+e.message); }
+      finally { $('submitDepositBtn').disabled=false; $('submitDepositBtn').textContent=i18n[currentLang].submitDeposit; }
+    });
+
+    $('withdrawBtn').addEventListener('click', async () => {
+      const amt = parseFloat($('withdrawAmt').value); const addr = $('withdrawAddr').value.trim();
+      if(!amt || amt<50) return alert(i18n[currentLang].min50);
+      if(!addr) return alert(i18n[currentLang].enterWallet);
+      $('withdrawBtn').disabled=true; $('withdrawBtn').textContent='...';
+      try {
+        const u = auth.currentUser; const uSnap = await getDoc(doc(db,'users',u.uid));
+        await addDoc(collection(db,'withdrawals'), { uid:u.uid, username:uSnap.exists()?uSnap.data().username:'?', amount:amt, network:$('withdrawNetwork').value, wallet:addr, status:'pending', requestedAt:serverTimestamp() });
+        alert(i18n[currentLang].withdrawSent); $('withdrawAmt').value=''; $('withdrawAddr').value='';
+      } catch(e) { alert('❌ '+e.message); }
+      finally { $('withdrawBtn').disabled=false; $('withdrawBtn').textContent=i18n[currentLang].submitWithdraw; }
+    });
+
+    $('regBtn').addEventListener('click', async () => {
+      const u = $('regUser').value.trim(), p = $('regPass').value.trim();
+      if(!u || !p) return alert(i18n[currentLang].fillAll);
+      if(!/^[a-zA-Z0-9_]+$/.test(u)) return alert(i18n[currentLang].englishOnly);
+      if(p.length<6) return alert(i18n[currentLang].minPass);
+      $('regBtn').disabled=true; $('regBtn').textContent='...';
+      try {
+        const email = toEmail(u);
+        const cred = await createUserWithEmailAndPassword(auth, email, p);
+        await setDoc(doc(db,'users',cred.user.uid), { username:u, balance:0, createdAt:serverTimestamp() });
+        alert(i18n[currentLang].success); toggle('login');
+      } catch(e) { alert(`❌ ${e.code==='auth/email-already-in-use'?i18n[currentLang].exists:e.message}`); }
+      finally { $('regBtn').disabled=false; $('regBtn').textContent=i18n[currentLang].regBtn; }
+    });
+
+    $('loginBtn').addEventListener('click', async () => {
+      const u = $('username').value.trim(), p = $('password').value.trim();
+      if(!u || !p) return alert(i18n[currentLang].fillAll);
+      $('loginBtn').disabled=true; $('loginBtn').textContent='...';
+      try {
+        const email = toEmail(u);
+        await signInWithEmailAndPassword(auth, email, p);
+      } catch(e) { alert(`❌ ${e.code==='auth/user-not-found'||e.code==='auth/wrong-password'||e.code==='auth/invalid-login-credentials'?i18n[currentLang].wrong:e.message}`); }
+      finally { $('loginBtn').disabled=false; $('loginBtn').textContent=i18n[currentLang].loginBtn; }
+    });
+
+    $('logoutBtn').addEventListener('click', () => signOut(auth));
+    $('toReg').addEventListener('click', e => { e.preventDefault(); toggle('register'); });
+    $('toLogin').addEventListener('click', e => { e.preventDefault(); toggle('login'); });
+    onAuthStateChanged(auth, async user => { if(user) { toggle('dashboard'); await loadUserData(user.uid); } else { toggle('login'); clearInterval(timerInt); } });
+    renderStatic();
+  </script>
+</body>
+</html>
