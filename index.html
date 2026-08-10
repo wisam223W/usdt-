@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>VaultUSD</title>
+  <style>
+    :root { --bg: #0a0e17; --card: #141924; --primary: #00d4ff; --accent: #00ff88; --danger: #ff4444; --text: #e0e6ed; --border: #2a3444; --sub: #8892a0; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { margin: 0; padding: 12px; font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+    .container { max-width: 460px; margin: auto; }
+    .box { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+    h1, h2 { margin: 0 0 12px; color: var(--primary); text-align: center; }
+    input, select, button { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid var(--border); background: #1a2030; color: #fff; border-radius: 8px; font-size: 14px; }
+    button { background: var(--primary); color: #000; font-weight: 600; border: none; cursor: pointer; }
+    button:disabled { opacity: 0.5; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-accent { background: var(--accent); color: #000; }
+    .hidden { display: none !important; }
+    .tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+    .tab { flex: 1; padding: 10px; background: #1a2030; border: 1px solid var(--border); border-radius: 8px; text-align: center; cursor: pointer; font-size: 13px; }
+    .tab.active { background: var(--primary); color: #000; border-color: var(--primary); }
+    .info { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .info:last-child { border-bottom: none; }
+    .link { color: var(--primary); text-decoration: underline; cursor: pointer; text-align: center; display: block; margin-top: 8px; font-size: 13px; }
+    .notice { background: #1f1500; border: 1px solid #ff9900; padding: 8px; border-radius: 6px; font-size: 12px; margin-bottom: 10px; text-align: center; color: #ffcc66; }
+    .timer { font-size: 12px; color: var(--sub); text-align: center; margin-top: 6px; }
+    #status { background: #111; border: 1px solid #333; padding: 6px; border-radius: 6px; margin-bottom: 10px; font-family: monospace; font-size: 11px; text-align: center; color: #0f0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="status">🔄 جاري التحميل...</div>
+    
+    <div id="authBox" class="box">
+      <h1>VaultUSD</h1>
+      <div class="notice">⚠️ احفظ اسم المستخدم وكلمة المرور. لا يوجد استعادة كلمة مرور.</div>
+      
+      <div id="loginView">
+        <input type="text" id="loginUser" placeholder="اسم المستخدم">
+        <input type="password" id="loginPass" placeholder="كلمة المرور">
+        <button id="btnLogin">دخول</button>
+        <span class="link" id="goReg">إنشاء حساب جديد</span>
+      </div>
+      
+      <div id="regView" class="hidden">
+        <input type="text" id="regUser" placeholder="اسم المستخدم (إنجليزي بدون مسافات)">
+        <input type="password" id="regPass" placeholder="كلمة المرور (6 أحرف على الأقل)">
+        <button id="btnReg">تسجيل</button>
+        <span class="link" id="goLogin">العودة للدخول</span>
+      </div>
+    </div>
+
+    <div id="dashBox" class="box hidden">
+      <h2>الرصيد: <span id="bal">$0.00</span></h2>
+      <div class="tabs">
+        <div class="tab active" data-t="pkg">الباقات</div>
+        <div class="tab" data-t="dep">إيداع</div>
+        <div class="tab" data-t="with">سحب</div>
+      </div>
+
+      <div id="view-pkg">
+        <div class="info"><span>VIP1 ($10)</span><span>15-20% يومياً</span></div>
+        <div class="info"><span>VIP2 ($30)</span><span>15-25% يومياً</span></div>
+        <div class="info"><span>VIP3 ($100)</span><span>15-25% يومياً</span></div>
+        <div class="info"><span>VIP4 ($250)</span><span>15-25% يومياً</span></div>
+        <div class="info"><span>VIP5 ($500)</span><span>20-25% يومياً</span></div>
+        <div class="info"><span>VIP6 ($1000)</span><span>20-30% يومياً</span></div>
+        <select id="pkgSel">
+          <option value="vip1">VIP1 - $10</option>
+          <option value="vip2">VIP2 - $30</option>
+          <option value="vip3">VIP3 - $100</option>
+          <option value="vip4">VIP4 - $250</option>
+          <option value="vip5">VIP5 - $500</option>
+          <option value="vip6">VIP6 - $1000</option>
+        </select>
+        <button id="btnAct" class="btn-accent">تفعيل الباقة</button>
+        <div id="pkgInfo" class="timer">لا توجد باقة مفعلة</div>
+      </div>
+
+      <div id="view-dep" class="hidden">
+        <select id="depNet">
+          <option value="TRC20">TRC20</option>
+          <option value="ERC20">ERC20</option>
+          <option value="BEP20">BEP20</option>
+          <option value="Polygon">Polygon</option>
+          <option value="Solana">Solana</option>
+        </select>
+        <input type="number" id="depAmt" placeholder="المبلغ (USDT)">
+        <input type="text" id="depTxid" placeholder="رقم العملية TXID (إلزامي)">
+        <button id="btnDep">إرسال طلب الإيداع</button>
+      </div>
+
+      <div id="view-with" class="hidden">
+        <select id="withNet">
+          <option value="TRC20">TRC20</option>
+          <option value="ERC20">ERC20</option>
+          <option value="BEP20">BEP20</option>
+          <option value="Polygon">Polygon</option>
+          <option value="Solana">Solana</option>
+        </select>
+        <input type="text" id="withAddr" placeholder="عنوان المحفظة">
+        <input type="number" id="withAmt" placeholder="المبلغ (الحد الأدنى $50)">
+        <button id="btnWith" class="btn-danger">طلب سحب</button>
+      </div>
+      
+      <button id="btnOut" style="margin-top:12px; background:#333;">خروج</button>
+    </div>
+  </div>
+
+  <script type="module">
+    const $ = id => document.getElementById(id);
+    const st = (t, c='#0f0') => { const e=$('status'); e.textContent=t; e.style.color=c; };
+    
+    let auth, db;
+    try {
+      const { initializeApp } = await import("https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js");
+      const { getAuth } = await import("https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js");
+      const { getFirestore } = await import("https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js");
+      
+      const cfg = { 
+        apiKey: "AIzaSyBEPY92lQXZHchrmPbmeNRjFG3FtkiN3a0", 
+        authDomain: "vaultusd-c1998.firebaseapp.com", 
+        projectId: "vaultusd-c1998", 
+        storageBucket: "vaultusd-c1998.firebasestorage.app", 
+        messagingSenderId: "627849430299", 
+        appId: "1:627849430299:web:d5680cc24a21861f367fbe" 
+      };
+      const app = initializeApp(cfg);
+      auth = getAuth(app);
+      db = getFirestore(app);
+      st("✅ جاهز", "#0f0");
+    } catch (e) { st("❌ خطأ تحميل Firebase", "#f44"); }
+
+    const toEmail = u => `${u.trim().toLowerCase()}@vaultusd.com`;
+    const PKG = { vip1:{p:10,r:1.5}, vip2:{p:30,r:6}, vip3:{p:100,r:20}, vip4:{p:250,r:50}, vip5:{p:500,r:112.5}, vip6:{p:1000,r:250} };
+
+    document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      ['pkg','dep','with'].forEach(v => $(`view-${v}`).classList.toggle('hidden', v !== t.dataset.t));
+    }));
+
+    $('goReg').onclick = () => { $('loginView').classList.add('hidden'); $('regView').classList.remove('hidden'); };
+    $('goLogin').onclick = () => { $('regView').classList.add('hidden'); $('loginView').classList.remove('hidden'); };
+
+    $('btnReg').onclick = async () => {
+      const u=$('regUser').value.trim(), p=$('regPass').value.trim();
+      if(!u || !p) return alert('أدخل البيانات كاملة');
+      if(!/^[a-zA-Z0-9_]+$/.test(u)) return alert('اسم المستخدم إنجليزي بدون مسافات');
+      if(p.length<6) return alert('كلمة المرور 6 أحرف على الأقل');
+      $('btnReg').disabled=true; $('btnReg').textContent='جاري...';
+      try {
+        const { createUserWithEmailAndPassword } = await import("https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js");
+        const { setDoc, doc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js");
+        const cred = await createUserWithEmailAndPassword(auth, toEmail(u), p);
+        await setDoc(doc(db, 'users', cred.user.uid), { username:u, balance:0, createdAt:serverTimestamp() });
+        alert('✅ تم إنشاء الحساب. سجل دخولك الآن.');
+        $('goLogin').click();
+      } catch(e) { alert('❌ '+(e.code==='auth/email-already-in-use'?'اسم المستخدم مستخدم':e.message)); }
+      finally { $('btnReg').disabled=false; $('btnReg').textContent='تسجيل'; }
+    };
+
+    $('btnLogin').onclick = async () => {
+      const u=$('loginUser').value.trim(), p=$('loginPass').value.trim();
+      if(!u || !p) return alert('أدخل البيانات كاملة');
+      $('btnLogin').disabled=true; $('btnLogin').textContent='جاري...';
+      try {
+        const { signInWithEmailAndPassword } = await import("https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js");
+        await signInWithEmailAndPassword(auth, toEmail(u), p);
+      } catch(e) { alert('❌ '+(e.code==='auth/user-not-found'?'غير مسجل':'بيانات خاطئة')); }
+      finally { $('btnLogin').disabled=false; $('btnLogin').textContent='دخول'; }
+    };
+
+    $('btnOut').onclick = async () => {
+      const { signOut } = await import("https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js");
+      await signOut(auth);
+    };
+
+    const { onAuthStateChanged, getDoc, doc, updateDoc, increment, addDoc, collection, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js");
+    const { onSnapshot } = await import("https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js");
+    
+    let uid = null;
+    onAuthStateChanged(auth, async user => {
+      if(user) {
+        uid = user.uid;
+        $('authBox').classList.add('hidden');
+        $('dashBox').classList.remove('hidden');
+        await checkDaily();
+        loadUser();
+      } else {
+        uid = null;
+        $('authBox').classList.remove('hidden');
+        $('dashBox').classList.add('hidden');
+      }
+    });
+
+    async function checkDaily() {
+      const ref = doc(db, 'users', uid);
+      const snap = await getDoc(ref);
+      if(!snap.exists()) return;
+      const d = snap.data();
+      const last = d.lastProfitAdded?.toDate() || 0;
+      if((Date.now() - last > 24*60*60*1000) && d.activePackage) {
+        const profit = PKG[d.activePackage]?.r || 0;
+        if(profit) await updateDoc(ref, { balance: increment(profit), lastProfitAdded: serverTimestamp() });
+      }
+    }
+
+    function loadUser() {
+      onSnapshot(doc(db, 'users', uid), snap => {
+        if(!snap.exists()) return;
+        const d = snap.data();
+        $('bal').textContent = `$${(d.balance||0).toFixed(2)}`;
+        if(d.activePackage && d.packageActivatedAt) {
+          const start = d.packageActivatedAt.toDate();
+          const end = new Date(start.getTime() + 30*24*60*60*1000);
+          const nextProfit = new Date((d.lastProfitAdded?.toDate() || start).getTime() + 24*60*60*1000);
+          $('pkgInfo').innerHTML = `✅ ${d.activePackage.toUpperCase()} | ينتهي: ${end.toLocaleDateString('ar')}<br>الربح التالي: ${nextProfit.toLocaleString('ar')}`;
+        } else {
+          $('pkgInfo').textContent = 'لا توجد باقة مفعلة';
+        }
+      });
+    }
+
+    $('btnAct').onclick = async () => {
+      if(!uid) return;
+      const pkg = $('pkgSel').value;
+      const price = PKG[pkg].p;
+      const ref = doc(db, 'users', uid);
+      const snap = await getDoc(ref);
+      const bal = snap.data()?.balance || 0;
+      if(bal < price) return alert('❌ الرصيد غير كافٍ');
+      $('btnAct').disabled=true; $('btnAct').textContent='جاري...';
+      try {
+        await updateDoc(ref, { activePackage: pkg, balance: increment(-price), packageActivatedAt: serverTimestamp(), lastProfitAdded: serverTimestamp() });
+        alert('✅ تم التفعيل بنجاح');
+      } catch(e) { alert('❌ ' + e.message); }
+      finally { $('btnAct').disabled=false; $('btnAct').textContent='تفعيل الباقة'; }
+    };
+
+    $('btnDep').onclick = async () => {
+      if(!uid) return;
+      const net=$('depNet').value, amt=parseFloat($('depAmt').value), txid=$('depTxid').value.trim();
+      if(!amt || !txid) return alert('أدخل المبلغ ورقم العملية');
+      $('btnDep').disabled=true; $('btnDep').textContent='جاري...';
+      try {
+        await addDoc(collection(db, 'deposits'), { uid, network:net, amount:amt, txid, status:'pending', createdAt:serverTimestamp() });
+        alert('✅ تم إرسال الطلب. سيتم تأكيد الرصيد من الإدارة.');
+        $('depAmt').value=''; $('depTxid').value='';
+      } catch(e) { alert('❌ ' + e.message); }
+      finally { $('btnDep').disabled=false; $('btnDep').textContent='إرسال طلب الإيداع'; }
+    };
+
+    $('btnWith').onclick = async () => {
+      if(!uid) return;
+      const net=$('withNet').value, addr=$('withAddr').value.trim(), amt=parseFloat($('withAmt').value);
+      if(!addr || !amt || amt<50) return alert('أدخل العنوان والمبلغ (الحد الأدنى $50)');
+      $('btnWith').disabled=true; $('btnWith').textContent='جاري...';
+      try {
+        await addDoc(collection(db, 'withdrawals'), { uid, network:net, address:addr, amount:amt, status:'pending', createdAt:serverTimestamp() });
+        alert('✅ تم إرسال طلب السحب');
+        $('withAddr').value=''; $('withAmt').value='';
+      } catch(e) { alert('❌ ' + e.message); }
+      finally { $('btnWith').disabled=false; $('btnWith').textContent='طلب سحب'; }
+    };
+  </script>
+</body>
+</html>
