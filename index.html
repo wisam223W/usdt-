@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VaultUSD</title>
+  <style>
+    :root { --primary: #00d4ff; --bg: #0b0f19; --card: #151a28; --text: #e0e6ed; --accent: #00ff88; --danger: #ff4444; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+    .container { max-width: 1000px; margin: auto; }
+    .auth-box, .dashboard { background: var(--card); padding: 30px; border-radius: 12px; margin-top: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+    input, button, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #333; background: #1a2030; color: white; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+    button { background: var(--primary); color: #000; font-weight: bold; cursor: pointer; border: none; transition: 0.2s; }
+    button:hover { opacity: 0.85; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .hidden { display: none !important; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 15px; margin: 15px 0; }
+    .card { background: #1a2030; padding: 15px; border-radius: 8px; border: 1px solid #333; }
+    .card h3 { color: var(--primary); margin: 0 0 10px; }
+    .copy-btn { background: #333; color: white; padding: 6px 12px; font-size: 13px; width: auto; display: inline-block; margin-top: 8px; }
+    .notice { background: #2a1515; border: 1px solid #ff4444; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: bold; }
+    .profit { color: var(--accent); font-weight: bold; }
+    a { color: var(--primary); text-decoration: none; cursor: pointer; }
+    h2 { margin-top: 0; }
+    .balance-box { background: #0f1520; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-size: 1.2em; border: 1px solid var(--primary); }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 5px; color: #aaa; font-size: 13px; }
+    .req { color: var(--danger); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 style="text-align:center; color:var(--primary); letter-spacing: 2px;">VaultUSD</h1>
+
+    <div id="loginSection" class="auth-box">
+      <h2>تسجيل الدخول</h2>
+      <input type="text" id="username" placeholder="اسم المستخدم (إنجليزي بدون مسافات)">
+      <input type="password" id="password" placeholder="كلمة المرور (6 أحرف على الأقل)">
+      <button id="loginBtn">دخول</button>
+      <p style="text-align:center; margin-top:10px;">ليس لديك حساب؟ <a id="toReg">سجل الآن</a></p>
+    </div>
+
+    <div id="registerSection" class="auth-box hidden">
+      <h2>إنشاء حساب جديد</h2>
+      <input type="text" id="regUser" placeholder="اسم المستخدم (إنجليزي بدون مسافات)">
+      <input type="password" id="regPass" placeholder="كلمة المرور (6 أحرف على الأقل)">
+      <button id="regBtn">تسجيل</button>
+      <p style="text-align:center; margin-top:10px;"><a id="toLogin">العودة لتسجيل الدخول</a></p>
+    </div>
+
+    <div id="dashboardSection" class="dashboard hidden">
+      <div class="notice">⚠️ احفظ بيانات الدخول. لا يوجد استعادة للحسابات المفقودة.</div>
+      <div class="balance-box">الرصيد الحالي: <span id="balanceDisplay">$0.00</span></div>
+      
+      <h3>📦 الباقات الاستثمارية</h3>
+      <div class="grid" id="packagesGrid"></div>
+
+      <h3>💳 عناوين الإيداع الرسمية (انسخ وأرسل المبلغ)</h3>
+      <div class="grid" id="networksGrid"></div>
+
+      <h3>📥 طلب إيداع (يتم المراجعة من الأدمن)</h3>
+      <div class="form-group">
+        <label>الشبكة المستخدمة للإيداع</label>
+        <select id="depNetwork">
+          <option value="TRC20">TRC20 (Tron)</option>
+          <option value="ERC20">ERC20 (Ethereum)</option>
+          <option value="BEP20">BEP20 (BNB Chain)</option>
+          <option value="Polygon">Polygon (MATIC)</option>
+          <option value="Solana">Solana (SOL)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>المبلغ المودع ($)</label>
+        <input type="number" id="depAmt" placeholder="مثال: 100">
+      </div>
+      <div class="form-group">
+        <label>رقم التحويل / TXID <span class="req">(إجباري)</span></label>
+        <input type="text" id="depTxId" placeholder="مثال: 0x123...abc" required>
+      </div>
+      <button id="submitDepositBtn">إرسال طلب الإيداع</button>
+
+      <h3>💸 طلب سحب</h3>
+      <select id="withdrawNetwork">
+        <option value="TRC20">TRC20 (Tron)</option>
+        <option value="ERC20">ERC20 (Ethereum)</option>
+        <option value="BEP20">BEP20 (BNB Chain)</option>
+        <option value="Polygon">Polygon (MATIC)</option>
+        <option value="Solana">Solana (SOL)</option>
+      </select>
+      <input type="number" id="withdrawAmt" placeholder="المبلغ (الحد الأدنى 50$)">
+      <input type="text" id="withdrawAddr" placeholder="عنوان محفظتك">
+      <button id="withdrawBtn">إرسال طلب السحب</button>
+      <button id="logoutBtn" style="background:var(--danger); margin-top:10px;">تسجيل خروج</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, addDoc, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBEPY92lQXZHchrmPbmeNRjFG3FtkiN3a0",
+      authDomain: "vaultusd-c1998.firebaseapp.com",
+      databaseURL: "https://vaultusd-c1998-default-rtdb.firebaseio.com",
+      projectId: "vaultusd-c1998",
+      storageBucket: "vaultusd-c1998.firebasestorage.app",
+      messagingSenderId: "627849430299",
+      appId: "1:627849430299:web:d5680cc24a21861f367fbe",
+      measurementId: "G-N7T16JW68V"
+    };
+
+    let auth, db;
+    try {
+      const app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      db = getFirestore(app);
+    } catch (err) { alert("خطأ في تهيئة Firebase"); }
+
+    const networks = [
+      {net: 'TRC20', addr: 'TAZVA4hwWfyPgd9yeSUr6Mh2PKk1iXP9uh'},
+      {net: 'ERC20', addr: '0x94027279299531c2e7a772bc99bc8e3e9e5e206a'},
+      {net: 'BEP20', addr: '0xc4e5bcd8cf4646fc72976ac78a371619b3ab6176'},
+      {net: 'Polygon', addr: '0xaf603b8efdb4747445972cc7fa5ec0d457f95051'},
+      {net: 'Solana', addr: '9Kfr9FhMbURTKisfxQ2gHJXvWXfCyFvFpWCeV6EFKgXL'}
+    ];
+
+    const packages = [
+      {id: 'vip1', name: 'VIP1', price: 10, profit: '15% - 20%'},
+      {id: 'vip2', name: 'VIP2', price: 30, profit: '15% - 25%'},
+      {id: 'vip3', name: 'VIP3', price: 100, profit: '15% - 25%'},
+      {id: 'vip4', name: 'VIP4', price: 250, profit: '15% - 25%'},
+      {id: 'vip5', name: 'VIP5', price: 500, profit: '20% - 25%'},
+      {id: 'vip6', name: 'VIP6', price: 1000, profit: '20% - 30%'}
+    ];
+
+    const dailyProfits = { vip1: 1.5, vip2: 6, vip3: 20, vip4: 50, vip5: 112.5, vip6: 250 };
+
+    const $ = id => document.getElementById(id);
+    const toggle = (view) => {
+      $('loginSection').classList.toggle('hidden', view !== 'login');
+      $('registerSection').classList.toggle('hidden', view !== 'register');
+      $('dashboardSection').classList.toggle('hidden', view !== 'dashboard');
+    };
+
+    const renderStatic = () => {
+      $('packagesGrid').innerHTML = packages.map(p => `
+        <div class="card">
+          <h3>${p.name}</h3>
+          <p>الاشتراك: <b>$${p.price}</b></p>
+          <p>الربح اليومي: <span class="profit">${p.profit}</span></p>
+          <button class="pkg-btn" data-id="${p.id}" data-price="${p.price}">تفعيل الباقة</button>
+        </div>`).join('');
+
+      $('networksGrid').innerHTML = networks.map(n => `
+        <div class="card">
+          <h3>${n.net}</h3>
+          <p style="word-break:break-all; font-size:13px; margin:5px 0">${n.addr}</p>
+          <button class="copy-btn" data-addr="${n.addr}">نسخ العنوان</button>
+        </div>`).join('');
+
+      document.querySelectorAll('.pkg-btn').forEach(btn => btn.addEventListener('click', () => activatePackage(btn.dataset.id, parseFloat(btn.dataset.price))));
+      document.querySelectorAll('.copy-btn').forEach(btn => btn.addEventListener('click', () => navigator.clipboard.writeText(btn.dataset.addr).then(()=>alert('✅ تم نسخ العنوان'))));
+    };
+
+    const checkAndAddDailyProfit = async (uid, userData) => {
+      if (!userData.activePackage) return false;
+      const last = userData.lastProfitAdded?.toMillis ? userData.lastProfitAdded.toMillis() : userData.lastProfitAdded || 0;
+      if (Date.now() - last >= 24 * 60 * 60 * 1000) {
+        const profit = dailyProfits[userData.activePackage] || 0;
+        if (profit > 0) {
+          await setDoc(doc(db, 'users', uid), { balance: increment(profit), lastProfitAdded: Date.now() }, { merge: true });
+          return true;
+        }
+      }
+      return false;
+    };
+
+    const activatePackage = async (pkgId, price) => {
+      const user = auth?.currentUser;
+      if(!user) return alert('سجل الدخول أولاً');
+      const btn = document.querySelector(`.pkg-btn[data-id="${pkgId}"]`);
+      if(btn) { btn.disabled = true; btn.textContent = 'جاري التحقق...'; }
+      try {
+        const snap = await getDoc(doc(db, 'users', user.uid));
+        if (!snap.exists()) return alert('خطأ في بيانات الحساب');
+        const balance = snap.data().balance || 0;
+        if (balance < price) {
+          alert(`⚠️ رصيدك غير كافٍ. المطلوب: $${price} | المتاح: $${balance}`);
+          return;
+        }
+        await setDoc(doc(db, 'users', user.uid), {
+          activePackage: pkgId,
+          balance: increment(-price),
+          lastProfitAdded: Date.now()
+        }, { merge: true });
+        alert(`✅ تم تفعيل ${pkgId} وخصم $${price}`);
+        loadUserData(user.uid);
+      } catch(e) { alert('❌ فشل التفعيل: ' + e.message); }
+      finally { if(btn) { btn.disabled = false; btn.textContent = 'تفعيل الباقة'; } }
+    };
+
+    const loadUserData = async (uid) => {
+      const snap = await getDoc(doc(db, 'users', uid));
+      if(snap.exists()) {
+        const data = snap.data();
+        $('balanceDisplay').textContent = `$${data.balance || 0}`;
+        if (await checkAndAddDailyProfit(uid, data)) {
+          const updated = await getDoc(doc(db, 'users', uid));
+          $('balanceDisplay').textContent = `$${updated.data().balance || 0}`;
+        }
+      }
+    };
+
+    $('submitDepositBtn').addEventListener('click', async () => {
+      const net = $('depNetwork').value;
+      const amt = parseFloat($('depAmt').value);
+      const txId = $('depTxId').value.trim();
+      if(!amt || amt <= 0) return alert('أدخل مبلغ صحيح');
+      if(!txId) return alert('رقم التحويل (TXID) إجباري');
+      
+      $('submitDepositBtn').disabled = true; $('submitDepositBtn').textContent = 'جاري الإرسال...';
+      try {
+        const user = auth.currentUser;
+        const userSnap = await getDoc(doc(db, 'users', user.uid));
+        const username = userSnap.exists() ? userSnap.data().username : 'Unknown';
+        
+        await addDoc(collection(db, 'deposits'), {
+          uid: user.uid, username, amount: amt, network: net, txId,
+          status: 'pending', requestedAt: serverTimestamp()
+        });
+        alert('✅ تم استلام طلب الإيداع. سيتم مراجعته من الأدمن.');
+        $('depAmt').value = ''; $('depTxId').value = '';
+      } catch(e) { alert('❌ فشل الإرسال: ' + e.message); }
+      finally { $('submitDepositBtn').disabled = false; $('submitDepositBtn').textContent = 'إرسال طلب الإيداع'; }
+    });
+
+    $('withdrawBtn').addEventListener('click', async () => {
+      const net = $('withdrawNetwork').value;
+      const amt = parseFloat($('withdrawAmt').value);
+      const addr = $('withdrawAddr').value.trim();
+      if(!amt || amt < 50) return alert('الحد الأدنى 50$');
+      if(!addr) return alert('أدخل عنوان المحفظة');
+      $('withdrawBtn').disabled = true; $('withdrawBtn').textContent = 'جاري الإرسال...';
+      try {
+        const user = auth.currentUser;
+        const userSnap = await getDoc(doc(db, 'users', user.uid));
+        const username = userSnap.exists() ? userSnap.data().username : 'Unknown';
+        await addDoc(collection(db, 'withdrawals'), {
+          uid: user.uid, username, amount: amt, network: net, wallet: addr,
+          status: 'pending', requestedAt: serverTimestamp()
+        });
+        alert('✅ تم استلام طلب السحب');
+        $('withdrawAmt').value = ''; $('withdrawAddr').value = '';
+      } catch(e) { alert('❌ ' + e.message); }
+      finally { $('withdrawBtn').disabled = false; $('withdrawBtn').textContent = 'إرسال طلب السحب'; }
+    });
+
+    $('regBtn').addEventListener('click', async () => {
+      const u = $('regUser').value.trim(), p = $('regPass').value.trim();
+      if(!u || !p) return alert('أدخل البيانات كاملة');
+      if(!/^[a-zA-Z0-9_]+$/.test(u)) return alert('اسم المستخدم إنجليزي بدون مسافات');
+      if(p.length < 6) return alert('كلمة المرور 6 أحرف على الأقل');
+      $('regBtn').disabled = true; $('regBtn').textContent = 'جاري التسجيل...';
+      try {
+        const cred = await createUserWithEmailAndPassword(auth, `${u.toLowerCase()}@vaultusd.local`, p);
+        await setDoc(doc(db, 'users', cred.user.uid), { username: u, balance: 0, createdAt: serverTimestamp() });
+        alert('✅ تم التسجيل'); toggle('login');
+      } catch(e) { alert('❌ ' + (e.code==='auth/email-already-in-use'?'مستخدم مسبقاً':e.message)); }
+      finally { $('regBtn').disabled = false; $('regBtn').textContent = 'تسجيل'; }
+    });
+
+    $('loginBtn').addEventListener('click', async () => {
+      const u = $('username').value.trim(), p = $('password').value.trim();
+      if(!u || !p) return alert('أدخل البيانات كاملة');
+      $('loginBtn').disabled = true; $('loginBtn').textContent = 'جاري الدخول...';
+      try { await signInWithEmailAndPassword(auth, `${u.toLowerCase()}@vaultusd.local`, p); }
+      catch(e) { alert('❌ بيانات خاطئة'); }
+      finally { $('loginBtn').disabled = false; $('loginBtn').textContent = 'دخول'; }
+    });
+
+    $('logoutBtn').addEventListener('click', () => signOut(auth));
+    $('toReg').addEventListener('click', e => { e.preventDefault(); toggle('register'); });
+    $('toLogin').addEventListener('click', e => { e.preventDefault(); toggle('login'); });
+
+    onAuthStateChanged(auth, async (user) => {
+      if(user) { toggle('dashboard'); await loadUserData(user.uid); }
+      else toggle('login');
+    });
+
+    renderStatic();
+  </script>
+</body>
+</html>
